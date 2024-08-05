@@ -7,26 +7,24 @@ import { PromptTemplate } from "langchain/prompts";
 
 import { PDFLoader } from "langchain/document_loaders/fs/pdf";
 
-// NOTE: change this default filePath to any of your default file name
 const chat = async (
-  filePath = "./uploads/MID-Fusion_Octree-based_Object-Level_Multi-Instance_Dynamic_SLAM.pdf",
-  query
+  query,
+  filePath = "./uploads/MID-Fusion_Octree-based_Object-Level_Multi-Instance_Dynamic_SLAM.pdf"
 ) => {
-  // step 1:
+  // step 1: document loading
   const loader = new PDFLoader(filePath);
 
   const data = await loader.load();
 
-  // step 2:
+  // step 2: splitting
   const textSplitter = new RecursiveCharacterTextSplitter({
-    chunkSize: 500, //  (in terms of number of characters)
+    chunkSize: 500,
     chunkOverlap: 0,
   });
 
-  const splitDocs = await textSplitter.splitDocuments(data);
+  const splitDocs = await textSplitter.splitDocuments(data); // chunks of text
 
-  // step 3
-
+  // step 3: embedding (text -> vector)
   const embeddings = new OpenAIEmbeddings({
     openAIApiKey: process.env.REACT_APP_OPENAI_API_KEY,
   });
@@ -36,15 +34,12 @@ const chat = async (
     embeddings
   );
 
-  // step 4: retrieval
+  // step 4: retrival (optional), you can check the relevant splits it retrieved
+  // const relevantDocs = await vectorStore.similaritySearch("What is this article about?");
 
-  // const relevantDocs = await vectorStore.similaritySearch(
-  // "What is task decomposition?"
-  // );
-
-  // step 5: qa w/ customzie the prompt
+  // step 5: question & answer
   const model = new ChatOpenAI({
-    modelName: "gpt-4",
+    modelName: "gpt-4.0",
     openAIApiKey: process.env.REACT_APP_OPENAI_API_KEY,
   });
 
@@ -52,13 +47,13 @@ const chat = async (
 If you don't know the answer, just say that you don't know, don't try to make up an answer.
 Use three sentences maximum and keep the answer as concise as possible.
 
+
 {context}
 Question: {question}
 Helpful Answer:`;
 
   const chain = RetrievalQAChain.fromLLM(model, vectorStore.asRetriever(), {
     prompt: PromptTemplate.fromTemplate(template),
-    // returnSourceDocuments: true,
   });
 
   const response = await chain.call({
