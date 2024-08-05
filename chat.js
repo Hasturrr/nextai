@@ -39,7 +39,7 @@ const chat = async (
 
   // step 5: question & answer
   const model = new ChatOpenAI({
-    modelName: "gpt-4.0",
+    modelName: "gpt-3.5-turbo",
     openAIApiKey: process.env.REACT_APP_OPENAI_API_KEY,
   });
 
